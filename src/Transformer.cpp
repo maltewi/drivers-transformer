@@ -41,7 +41,19 @@ void Transformation::setTransformationChain(const std::vector< TransformationEle
 	for(std::vector< TransformationElement* >::iterator it = transformationChain.begin();
 	it != transformationChain.end(); it++)
 	{
-	    (*it)->addTransformationChangedCallback(transformationChangedCallback);
+            StaticTransformationElement *staticElem = dynamic_cast<StaticTransformationElement *>(*it);;
+            InverseTransformationElement *invElem = dynamic_cast<InverseTransformationElement *>(*it);
+            if(invElem)
+            {
+                staticElem = dynamic_cast<StaticTransformationElement *>(invElem->getElement());
+            }
+            if(staticElem)
+            {
+                //call the callback, as the transformation will never 'change' again 
+                transformationChangedCallback(base::Time());
+            }
+            else
+                (*it)->addTransformationChangedCallback(transformationChangedCallback);
 	}
     }
 }
@@ -244,6 +256,7 @@ bool InverseTransformationElement::getTransformation(const base::Time& atTime, b
 	tr2 = tr;
 	tr2 = tr2.inverse();
 	tr.setTransform(tr2);
+        std::swap(tr.sourceFrame, tr.targetFrame);
 	return true;
     }
     return false;
@@ -459,6 +472,13 @@ void Transformer::unregisterTransformation(Transformation* transformation)
 
 void Transformer::recomputeAvailableTransformations()
 {
+    std::vector<TransformationElement *> &elements(transformationTree.getAvailableElements());
+    //clear all currenty registered callbacks
+    for(std::vector<TransformationElement *>::iterator element = elements.begin(); element != elements.end(); element++)
+    {
+        (*element)->clearTransformationChangedCallbacks();
+    }
+    
     //seek through all available data streams and update transformation chains
     for(std::vector<Transformation *>::iterator transform = transformations.begin(); transform != transformations.end(); transform++)
     {

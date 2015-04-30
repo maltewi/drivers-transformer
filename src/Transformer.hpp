@@ -147,8 +147,19 @@ class TransformationElement {
 	 * This function registers a callback, that should be called every
 	 * time the TransformationElement changes its value. 
 	 * */
-	virtual void addTransformationChangedCallback(boost::function<void (const base::Time &ts)> callback) {};
-	
+        virtual void addTransformationChangedCallback(boost::function<void (const base::Time &ts)> callback)
+        {
+            elementChangedCallbacks.push_back(callback);
+        };
+        
+        /**
+         * Removes all registered callbacks
+         * */
+        virtual void clearTransformationChangedCallbacks()
+        {
+            elementChangedCallbacks.clear();
+        }
+        
 	/**
 	 * returns the name of the source frame
 	 * */
@@ -165,6 +176,8 @@ class TransformationElement {
 	    return targetFrame;
 	}
 
+    protected:
+        std::vector<boost::function<void (const base::Time &ts)> > elementChangedCallbacks;
     private:
 	std::string sourceFrame;
 	std::string targetFrame;
@@ -180,6 +193,7 @@ class StaticTransformationElement : public TransformationElement {
 	virtual bool getTransformation(const base::Time& atTime, bool doInterpolation, TransformationType& tr)
 	{
 	    tr = staticTransform;
+            tr.time = atTime;
 	    return true;
 	};
     private:
@@ -197,12 +211,7 @@ class DynamicTransformationElement : public TransformationElement {
 	virtual ~DynamicTransformationElement();
 	
 	virtual bool getTransformation(const base::Time& atTime, bool doInterpolation, TransformationType& result);
-
-	virtual void addTransformationChangedCallback(boost::function<void (const base::Time &ts)> callback)
-	{
-	    elementChangedCallbacks.push_back(callback);
-	};
-	
+        
 	int getStreamIdx() const
 	{
 	    return streamIdx;
@@ -211,7 +220,6 @@ class DynamicTransformationElement : public TransformationElement {
     private:
 	
 	void aggregatorCallback(const base::Time &ts, const TransformationType &value); 
-        std::vector<boost::function<void (const base::Time &ts)> > elementChangedCallbacks;
 
 	aggregator::StreamAligner &aggregator;
 	base::Time lastTransformTime;
@@ -228,7 +236,7 @@ class InverseTransformationElement : public TransformationElement {
 	InverseTransformationElement(TransformationElement *source): TransformationElement(source->getTargetFrame(), source->getSourceFrame()), nonInverseElement(source) {};
 	virtual bool getTransformation(const base::Time& atTime, bool doInterpolation, TransformationType& tr);
 
-	virtual void setTransformationChangedCallback(boost::function<void (const base::Time &ts)> callback) 
+	virtual void addTransformationChangedCallback(boost::function<void (const base::Time &ts)> callback) 
 	{
 	    nonInverseElement->addTransformationChangedCallback(callback);
 	};
@@ -276,6 +284,14 @@ class TransformationTree
 	 * */
 	bool getTransformationChain(std::string from, std::string to, std::vector<TransformationElement *> &result);
 	
+        /**
+         * Returns a vector of all currently registered transformation elements.
+         * */
+        std::vector<TransformationElement *> &getAvailableElements()
+        {
+            return availableElements;
+        }
+        
 	/**
 	 * Destructor, deletes all TransformationElements saved in availableElements
 	 * */
