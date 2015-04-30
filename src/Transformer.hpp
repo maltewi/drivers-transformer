@@ -122,7 +122,7 @@ class Transformation
 	bool getChain(const base::Time& atTime, std::vector<TransformationType>& result, bool interpolate = false) const;
 
 	template <class T>
-	bool get(const base::Time& atTime, T& result, bool interpolate = false) const;
+	bool get_t(const base::Time& atTime, T& result, bool interpolate = false) const;
 	bool getChain(const base::Time& atTime, std::vector<Eigen::Affine3d>& result, bool interpolate = false) const;
 };
 
@@ -519,9 +519,9 @@ class Transformer
 };
 
 template<class T>
-bool Transformation::get(const base::Time& atTime, T& result, bool interpolate) const
+bool Transformation::get_t(const base::Time& atTime, T& result, bool interpolate) const
 {
-    result = T::Identity();
+    result.initSane();
     if (!valid)
     {
         failedNoChain++;

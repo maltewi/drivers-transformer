@@ -378,7 +378,7 @@ bool Transformation::get(const base::Time &time, TransformationType& tr, bool do
     tr.time = time;
 
     base::samples::RigidBodyState fullTransformation;
-    bool ret = get(time, fullTransformation, doInterpolation);
+    bool ret = get_t(time, fullTransformation, doInterpolation);
     if(!ret)
 	return false;
     
