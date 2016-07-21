@@ -15,7 +15,12 @@ module Transformer
 
         def add_transforms_annotations
             plan.find_local_tasks(Syskit::Device).each do |device_task|
-                tr = device_task.model.transformer
+                tr = nil
+                begin
+                    tr = device_task.model.transformer
+                rescue Exception => ex
+                    next
+                end
                 # Add frame information stored in device definitions
                 device_task.each_master_device do |dev|
                     selected_frame = dev.frame
